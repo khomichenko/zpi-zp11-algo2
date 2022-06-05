@@ -2,7 +2,7 @@ package practice8;
 
 import practice7.INode;
 import practice7.ITree;
-import practice7.Tree;
+import practice7.Quadruple;
 
 import java.util.Stack;
 
@@ -13,7 +13,7 @@ public class RedBlackTree implements ITree {
         Node right;
         Node parent;
         boolean color;
-        public Node(Integer data) {
+        public Node(Integer data, Boolean color) {
             this.data = data;
         }
         @Override public Integer getData() {
@@ -31,28 +31,27 @@ public class RedBlackTree implements ITree {
 
     private Node root;
 
-    @Override public void insert(Integer key) {
+    @Override public void insert(Integer data) {
         Node node = root;
         Node parent = null;
 
-        // Traverse the tree to the left or right depending on the key
+        // Проходимо дерево вліво або вправо залежно від data
         while (node != null) {
             parent = node;
-            if (key < node.data) {
+            if (data < node.data) {
                 node = node.left;
-            } else if (key > node.data) {
+            } else if (data > node.data) {
                 node = node.right;
             } else {
-                throw new IllegalArgumentException("BST already contains a node with key " + key);
+                throw new IllegalArgumentException("Дублікат " + data);
             }
         }
 
-        // Insert new node
-        Node newNode = new Node(key);
-        newNode.color = RED;
+        // Вставляємо нову вершину
+        Node newNode = new Node(data, RED);
         if (parent == null) {
             root = newNode;
-        } else if (key < parent.data) {
+        } else if (data < parent.data) {
             parent.left = newNode;
         } else {
             parent.right = newNode;
@@ -65,86 +64,85 @@ public class RedBlackTree implements ITree {
     private void fixRedBlackPropertiesAfterInsert(Node node) {
         Node parent = node.parent;
 
-        // Case 1: Parent is null, we've reached the root, the end of the recursion
+        // Випадок 1: Батько є null, ми дойшли до корня, кінець рекурсії
         if (parent == null) {
-            // Uncomment the following line if you want to enforce black roots (rule 2):
+            // Розкоментуйте наступний рядок, якщо ви хочете застосувати чорні корені (правило 2):
             // node.color = BLACK;
             return;
         }
 
-        // Parent is black --> nothing to do
+        // Батька - чорний --> нічого не робимо
         if (parent.color == BLACK) {
             return;
         }
 
-        // From here on, parent is red
+        // Батька є сервоний, тоді ...
         Node grandparent = parent.parent;
 
-        // Case 2:
-        // Not having a grandparent means that parent is the root. If we enforce black roots
-        // (rule 2), grandparent will never be null, and the following if-then block can be
-        // removed.
+        // Випадок 2:
+        // Відсутність бабусі й дідуся означає, що батько є коренем. Якщо ми домагаємося чорних коренів
+        // (правило 2), дідусь і бабуся ніколи не будуть нульовими, а наступний блок if-then може бути видалено.
         if (grandparent == null) {
-            // As this method is only called on red nodes (either on newly inserted ones - or -
-            // recursively on red grandparents), all we have to do is to recolor the root black.
+            // Оскільки цей метод викликається лише для червоних вузлів (або для нещодавно вставлених - або -рекурсивно для червоних бабусь і дідусів),
+            // все, що нам потрібно зробити, це перефарбувати корінь у чорний колір.
             parent.color = BLACK;
             return;
         }
 
-        // Get the uncle (may be null/nil, in which case its color is BLACK)
+        // Отримати дядька (може бути нуль, у цьому випадку його колір ЧОРНИЙ)
         Node uncle = getUncle(parent);
 
-        // Case 3: Uncle is red -> recolor parent, grandparent and uncle
+        // Випадок 3: дядько червоний -> перефарбувати батьків, дідуся та бабусю та дядька
         if (uncle != null && uncle.color == RED) {
             parent.color = BLACK;
             grandparent.color = RED;
             uncle.color = BLACK;
 
-            // Call recursively for grandparent, which is now red.
-            // It might be root or have a red parent, in which case we need to fix more...
+            // Рекурсивний виклик для бабусі й дідуся, який тепер червоний. Це може бути root або мати червоного батька,
+            // і в такому випадку нам потрібно виправити більше...
             fixRedBlackPropertiesAfterInsert(grandparent);
         }
 
-        // Note on performance:
-        // It would be faster to do the uncle color check within the following code. This way
-        // we would avoid checking the grandparent-parent direction twice (once in getUncle()
-        // and once in the following else-if). But for better understanding of the code,
-        // I left the uncle color check as a separate step.
+        // Примітка щодо продуктивності:
+        // Було б швидше виконати перевірку кольору дядька в наступному коді.
+        // Таким чином ми б уникнули двічі перевіряти напрямок бабусь і батьків (один раз у getUncle()
+        // і один раз у наступному else-if).
+        // Але для кращого розуміння коду я залишив перевірку кольору дядька як окремий крок.
 
-        // Parent is left child of grandparent
+        // Батько залишився дитиною бабусі та дідуся
         else if (parent == grandparent.left) {
-            // Case 4a: Uncle is black and node is left->right "inner child" of its grandparent
+            // Випадок 4a: дядько чорний, а вузол лівий->правий «внутрішня дитина» його бабусі чи дідуся
             if (node == parent.right) {
                 rotateLeft(parent);
 
-                // Let "parent" point to the new root node of the rotated sub-tree.
-                // It will be recolored in the next step, which we're going to fall-through to.
+                // Нехай "батько" вказує на новий кореневий вузол повернутого піддерева.
+                // Він буде перефарбований на наступному кроці, до якого ми збираємося перейти.
                 parent = node;
             }
 
-            // Case 5a: Uncle is black and node is left->left "outer child" of its grandparent
+            // Випадок 5a: дядько чорний, а вузол ліворуч->лівий «зовнішній дочірній» від бабусі та дідуся
             rotateRight(grandparent);
 
-            // Recolor original parent and grandparent
+            // Перефарбуйте оригінальних батьків і дідусів
             parent.color = BLACK;
             grandparent.color = RED;
         }
 
-        // Parent is right child of grandparent
+        // Батько - права дитина бабусі й дідуся
         else {
-            // Case 4b: Uncle is black and node is right->left "inner child" of its grandparent
+            // Випадок 4b: дядько чорний, а вузол праворуч->лівий «внутрішня дитина» його бабусі та дідуся
             if (node == parent.left) {
                 rotateRight(parent);
 
-                // Let "parent" point to the new root node of the rotated sub-tree.
-                // It will be recolored in the next step, which we're going to fall-through to.
+                // Нехай "батько" вказує на новий кореневий вузол повернутого піддерева.
+                // Він буде перефарбований на наступному кроці, до якого ми збираємося перейти.
                 parent = node;
             }
 
-            // Case 5b: Uncle is black and node is right->right "outer child" of its grandparent
+            // Випадок 5b: дядько чорний, а вузол праворуч->правий «зовнішня дитина» його бабусі чи дідуся
             rotateLeft(grandparent);
 
-            // Recolor original parent and grandparent
+            // Перефарбуйте оригінальних батьків і дідусів
             parent.color = BLACK;
             grandparent.color = RED;
         }
@@ -157,7 +155,7 @@ public class RedBlackTree implements ITree {
         } else if (grandparent.right == parent) {
             return grandparent.left;
         } else {
-            throw new IllegalStateException("Parent is not a child of its grandparent");
+            throw new IllegalStateException("Батько не є дитиною своїх дідусів і бабусь");
         }
     }
 
@@ -199,7 +197,7 @@ public class RedBlackTree implements ITree {
         } else if (parent.right == oldChild) {
             parent.right = newChild;
         } else {
-            throw new IllegalStateException("Node is not a child of its parent");
+            throw new IllegalStateException("Вузол не є дочірнім до свого батька");
         }
 
         if (newChild != null) {
@@ -207,12 +205,12 @@ public class RedBlackTree implements ITree {
         }
     }
 
-    public Tree.Quadruple<INode,Integer,Boolean, Long> find(int key) {
+    public Quadruple<INode,Integer,Boolean, Long> find(Integer key) {
         Node node = root;
         Integer comparisonCount = 1;
         while (node != null) {
-            if (key == node.data) {
-                return new Tree.Quadruple<>(node,comparisonCount,false,0L);
+            if (key.equals(node.data)) {
+                return new Quadruple<>(node,comparisonCount,false,0L);
             } else if (key < node.data) {
                 node = node.left;
             } else {
@@ -220,12 +218,12 @@ public class RedBlackTree implements ITree {
             }
             comparisonCount++;
         }
-        return new Tree.Quadruple(null,0,false,0L);
+        return new Quadruple(null,0,false,0L);
     }
 
-    @Override public Tree.Quadruple<INode,Integer,Boolean, Long> findOrInsertAndFind(Integer key) {
+    @Override public Quadruple<INode,Integer,Boolean, Long> findOrInsertAndFind(Integer key) {
         long startedMs = System.currentTimeMillis();
-        Tree.Quadruple<INode, Integer, Boolean, Long> found = this.find(key);
+        Quadruple<INode, Integer, Boolean, Long> found = this.find(key);
         if (found==null || found.a==null) {
             insert(key);
             found = this.find(key);

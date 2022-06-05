@@ -1,34 +1,8 @@
 package practice7;
 
-import java.util.Stack;
-
 public class Tree implements ITree {
 
-    public class Node implements INode {
-        public Node left;
-        public Node right;
-        public Integer data;
-        public Integer getData() {return data; }
-        public Node(Integer data) {
-            this.data = data;
-        }
-    }
-
-    public class Triple<A,B,C> {
-        public A a; public B b; public C c;
-        public Triple(A a, B b, C c) {this.a = a; this.b = b; this.c = c;}
-    }
-
-    public static class Quadruple<A,B,C,D> {
-        public A a; public B b; public C c; public D d;
-        public Quadruple(A a, B b, C c, D d) {this.a = a; this.b = b; this.c = c; this.d = d;}
-    }
-
-    public Node rootNode; // кореневий вузол
-
-    public Tree() { // Пусте дерево
-        rootNode = null;
-    }
+    public Node rootNode = null; // кореневий вузол
 
     @Override public void insert(Integer value) { // метод вставки нового елементу
         Node newNode = new Node(value); // створення нового вузла
@@ -61,43 +35,14 @@ public class Tree implements ITree {
 
     public void printTree() {
         TreePrinter.print(rootNode);
-        /*
-        // метод для виведення дерева в консоль
-        Stack globalStack = new Stack(); // загальний стек для значень дерева
-        globalStack.push(rootNode);
-        int gaps = 100; // початкове значення відстані між елементами
-        boolean isRowEmpty = false;
-
-        while (isRowEmpty == false) {
-            Stack localStack = new Stack(); // локальний стек для завдання нащадків елемента
-            isRowEmpty = true;
-
-            for (int j = 0; j < gaps; j++)
-                System.out.print(' ');
-            while (globalStack.isEmpty() == false) { // поки в загальному стеку є елементи
-                Node temp = (Node) globalStack.pop(); // беремо наступний, при цьому видаляючи його зі стека
-                if (temp != null) {
-                    System.out.print(temp.data); // виводимо його значення в консолі
-                    localStack.push(temp.left); // зберігаємо в локальний стек, спадкоємці поточного елемента
-                    localStack.push(temp.right);
-                    if (temp.left != null || temp.right != null)
-                        isRowEmpty = false;
-                } else {
-                    System.out.print("__");// - якщо елемент порожній
-                    localStack.push(null);
-                    localStack.push(null);
-                }
-                for (int j = 0; j < gaps * 2 - 2; j++)
-                    System.out.print(' ');
-            }
-            System.out.println();
-            gaps /= 2;// при переході на наступний рівень відстань між елементами щоразу зменшується
-            while (localStack.isEmpty() == false)
-                globalStack.push(localStack.pop()); // переміщуємо всі елементи з локального стеку до глобального
-        }*/
     }
 
-    public Quadruple<INode, Integer, Boolean, Long> find(int value) { // пошук вузла по значенню
+    /**
+     * Пошук вузла дерева по значенню
+     * @param  value значення
+     * @return ноду, кількість порівнянь, чи була вставка (завжди false), кількість мілісекунд
+     */
+    public Quadruple<INode, Integer, Boolean, Long> find(Integer value) { // пошук вузла по значенню
         long startedMs = System.currentTimeMillis();
         int comparisonCount = 1;    // для підрахунку кількості порівнянь
         Node currentNode = rootNode; // починаємо пошук з кореневого вузла
@@ -108,19 +53,25 @@ public class Tree implements ITree {
             } else { // або рухаємося праворуч
                 currentNode = currentNode.right;
             }
-            if (currentNode == null) { // якщо дит немає
-                return new Quadruple<>(null, comparisonCount, false, System.currentTimeMillis() - startedMs); // повертаємо null
+            if (currentNode == null) { // якщо дитини немає, то повертаємо null
+                return new Quadruple<>(null, comparisonCount, false, System.currentTimeMillis() - startedMs);
             }
         }
-        return new Quadruple<>(currentNode, comparisonCount, false, System.currentTimeMillis() - startedMs); // повертаємо знайдений елемент
+        // повертаємо знайдений елемент
+        return new Quadruple<>(currentNode, comparisonCount, false, System.currentTimeMillis() - startedMs);
     }
 
-    public Quadruple<INode,Integer,Boolean, Long> findOrInsertAndFind(Integer key) {
+    /**
+     * Пошук вузла дерева по значенню, але якщо не знайдено - вставити, і знову пошук
+     * @param value значення
+     * @return ноду, кількість порівнянь, чи була вставка (false або true), кількість мілісекунд
+     */
+    public Quadruple<INode,Integer,Boolean, Long> findOrInsertAndFind(Integer value) {
         long startedMs = System.currentTimeMillis();
-        Quadruple<INode, Integer, Boolean, Long> found = this.find(key);
-        if (found==null || found.a==null) {
-            insert(key);
-            found = this.find(key);
+        Quadruple<INode, Integer, Boolean, Long> found = this.find(value);
+        if (found==null || found.a==null) { // якщо не знайшли
+            insert(value); // вставляэмо елемент в деревно
+            found = this.find(value); // знову шукаємо
             found.c = true;
         }
         found.d = System.currentTimeMillis() - startedMs;

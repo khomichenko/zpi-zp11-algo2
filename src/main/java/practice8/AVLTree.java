@@ -2,7 +2,7 @@ package practice8;
 
 import practice7.INode;
 import practice7.ITree;
-import practice7.Tree;
+import practice7.Quadruple;
 
 import java.util.Stack;
 
@@ -13,15 +13,12 @@ public class AVLTree implements ITree {
         Integer height;
         Node left;
         Node right;
-
-        Node(Integer key) {
-            this.data = key;
+        Node(Integer data) {
+            this.data = data;
         }
-
         @Override public Integer getData() {
             return data;
         }
-
         @Override
         public String toString() {
             return ""+ data +" (height:"+(height==null?0:height)+")";
@@ -30,22 +27,28 @@ public class AVLTree implements ITree {
 
     private Node root;
 
-    public Tree.Quadruple<INode,Integer,Boolean, Long> find(Integer key) {
+    /**
+     * Пошук вузла дерева по значенню
+     * @param  value значення
+     * @return ноду, кількість порівнянь, чи була вставка (завжди false), кількість мілісекунд
+     */
+    public Quadruple<INode,Integer,Boolean, Long> find(Integer value) {
+        long startedMs = System.currentTimeMillis();
         Node current = root;
-        int comparisonCount = 1;
+        int comparisonCount = 1; // для підрахунку кількості порівнянь
         while (current != null) {
-            if (current.data == key) {
+            if (current.data.equals(value)) {
                 break;
             }
             comparisonCount++;
-            current = current.data < key ? current.right : current.left;
+            current = current.data < value ? current.right : current.left;
         }
-        return new Tree.Quadruple<>(current,comparisonCount,false,0L) ;
+        return new Quadruple<>(current, comparisonCount,false,System.currentTimeMillis() - startedMs) ;
     }
 
-    public Tree.Quadruple<INode,Integer,Boolean, Long> findOrInsertAndFind(Integer key) {
+    public Quadruple<INode,Integer,Boolean, Long> findOrInsertAndFind(Integer key) {
         long startedMs = System.currentTimeMillis();
-        Tree.Quadruple<INode, Integer, Boolean, Long> found = this.find(key);
+        Quadruple<INode, Integer, Boolean, Long> found = this.find(key);
         if (found==null || found.a==null) {
             insert(key);
             found = this.find(key);
@@ -71,17 +74,22 @@ public class AVLTree implements ITree {
         return root == null ? -1 : root.height;
     }
 
+    /**
+     * Вставити елемент в дерево. Після вставки дерево потрібно збалансувати
+     * @param key значення
+     */
     private Node insert(Node node, Integer key) {
         if (node == null) {
             return new Node(key);
-        } else if (node.data > key) {
+        } else if (node.data > key) { // вставляємо в ліве піддерево (рекурсивно)
             node.left = insert(node.left, key);
-        } else if (node.data < key) {
+        } else if (node.data < key) { // вставляємо в праве піддерево (рекурсивно)
             node.right = insert(node.right, key);
         } else {
             // throw new RuntimeException("duplicate Key!");
+            System.out.println("duplicate key");
         }
-        return rebalance(node);
+        return rebalance(node); // балансуємо і вертаємо результат
     }
 
     private Node delete(Node node, Integer key) {
@@ -115,9 +123,14 @@ public class AVLTree implements ITree {
         return current;
     }
 
+    /**
+     * Балансировка дерева
+     * @param z вершина
+     * @return збалансоване дерево
+     */
     private Node rebalance(Node z) {
-        updateHeight(z);
-        Integer balance = getBalance(z);
+        updateHeight(z); // визначення висоти дерева
+        Integer balance = getBalance(z); // баланс - різниця між висотами лівого і правого піддерева
         if (balance > 1) {
             if (height(z.right.right) > height(z.right.left)) {
                 z = rotateLeft(z);

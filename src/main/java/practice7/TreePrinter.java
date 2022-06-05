@@ -15,12 +15,12 @@ public class TreePrinter
      * @param root
      *            tree root node
      */
-    public static void print(Tree.Node root)
+    public static void print(Node root)
     {
         List<List<String>> lines = new ArrayList<>();
 
-        List<Tree.Node> level = new ArrayList<>();
-        List<Tree.Node> next = new ArrayList<>();
+        List<Node> level = new ArrayList<>();
+        List<Node> next = new ArrayList<>();
 
         level.add(root);
         int nn = 1;
@@ -32,7 +32,7 @@ public class TreePrinter
 
             nn = 0;
 
-            for (Tree.Node n : level) {
+            for (Node n : level) {
                 if (n == null) {
                     line.add(null);
 
@@ -55,7 +55,7 @@ public class TreePrinter
 
             lines.add(line);
 
-            List<Tree.Node> tmp = level;
+            List<Node> tmp = level;
             level = next;
             next = tmp;
             next.clear();
